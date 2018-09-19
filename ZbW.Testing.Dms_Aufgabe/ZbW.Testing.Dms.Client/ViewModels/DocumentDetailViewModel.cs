@@ -1,4 +1,13 @@
-﻿namespace ZbW.Testing.Dms.Client.ViewModels
+﻿using System.Configuration;
+using System.IO;
+using System.Text;
+using System.Windows;
+using System.Xml;
+using System.Xml.Serialization;
+using ZbW.Testing.Dms.Client.Model;
+using ZbW.Testing.Dms.Client.Services;
+
+namespace ZbW.Testing.Dms.Client.ViewModels
 {
     using System;
     using System.Collections.Generic;
@@ -66,6 +75,19 @@
             set
             {
                 SetProperty(ref _bezeichnung, value);
+            }
+        }
+
+        public string FilePath
+        {
+            get
+            {
+                return _filePath;
+            }
+
+            set
+            {
+                SetProperty(ref _filePath, value);
             }
         }
 
@@ -165,8 +187,19 @@
         private void OnCmdSpeichern()
         {
             // TODO: Add your Code here
+            var fileService = new FileService();
+           
+            var repositoryDir = ConfigurationManager.AppSettings["RepositoryDir"];
 
-            _navigateBack();
+            try
+            {
+                fileService.Save(repositoryDir, _filePath, ValutaDatum, Bezeichnung, SelectedTypItem, Erfassungsdatum, Benutzer, IsRemoveFileEnabled, new MetadataItem(this));
+                _navigateBack();
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Es müssen alle Pflichtfelder ausgefüllt werden!");
+            }
         }
     }
 }

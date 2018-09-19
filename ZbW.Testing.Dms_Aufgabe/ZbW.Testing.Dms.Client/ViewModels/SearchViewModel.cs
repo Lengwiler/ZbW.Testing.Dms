@@ -1,4 +1,8 @@
-﻿namespace ZbW.Testing.Dms.Client.ViewModels
+﻿using System.Diagnostics;
+using System.IO;
+using System.Xml.Serialization;
+
+namespace ZbW.Testing.Dms.Client.ViewModels
 {
     using System.Collections.Generic;
 
@@ -111,6 +115,7 @@
         private void OnCmdOeffnen()
         {
             // TODO: Add your Code here
+            Process.Start(_selectedMetadataItem.FilePath);
         }
 
         private void OnCmdSuchen()
