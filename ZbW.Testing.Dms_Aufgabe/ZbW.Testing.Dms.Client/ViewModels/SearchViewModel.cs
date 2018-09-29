@@ -1,131 +1,160 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System.Xml.Serialization;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using Prism.Commands;
+using Prism.Mvvm;
+using ZbW.Testing.Dms.Client.Model;
+using ZbW.Testing.Dms.Client.Repositories;
+using ZbW.Testing.Dms.Client.Services.Impl;
 
 namespace ZbW.Testing.Dms.Client.ViewModels
 {
-    using System.Collections.Generic;
+  internal class SearchViewModel : BindableBase
+  {
+    private FileSystemService _fileSystemService;
+    private ObservableCollection<IMetadataItem> _filteredMetadataItems;
+    private IMetadataItem _selectedMetadataItem;
 
-    using Prism.Commands;
-    using Prism.Mvvm;
+    private string _selectedTypItem;
 
-    using ZbW.Testing.Dms.Client.Model;
-    using ZbW.Testing.Dms.Client.Repositories;
+    private string _suchbegriff;
 
-    internal class SearchViewModel : BindableBase
+    private List<string> _typItems;
+
+    public SearchViewModel()
     {
-        private List<MetadataItem> _filteredMetadataItems;
+      TypItems = ComboBoxItems.Typ;
 
-        private MetadataItem _selectedMetadataItem;
-
-        private string _selectedTypItem;
-
-        private string _suchbegriff;
-
-        private List<string> _typItems;
-
-        public SearchViewModel()
-        {
-            TypItems = ComboBoxItems.Typ;
-
-            CmdSuchen = new DelegateCommand(OnCmdSuchen);
-            CmdReset = new DelegateCommand(OnCmdReset);
-            CmdOeffnen = new DelegateCommand(OnCmdOeffnen, OnCanCmdOeffnen);
-        }
-
-        public DelegateCommand CmdOeffnen { get; }
-
-        public DelegateCommand CmdSuchen { get; }
-
-        public DelegateCommand CmdReset { get; }
-
-        public string Suchbegriff
-        {
-            get
-            {
-                return _suchbegriff;
-            }
-
-            set
-            {
-                SetProperty(ref _suchbegriff, value);
-            }
-        }
-
-        public List<string> TypItems
-        {
-            get
-            {
-                return _typItems;
-            }
-
-            set
-            {
-                SetProperty(ref _typItems, value);
-            }
-        }
-
-        public string SelectedTypItem
-        {
-            get
-            {
-                return _selectedTypItem;
-            }
-
-            set
-            {
-                SetProperty(ref _selectedTypItem, value);
-            }
-        }
-
-        public List<MetadataItem> FilteredMetadataItems
-        {
-            get
-            {
-                return _filteredMetadataItems;
-            }
-
-            set
-            {
-                SetProperty(ref _filteredMetadataItems, value);
-            }
-        }
-
-        public MetadataItem SelectedMetadataItem
-        {
-            get
-            {
-                return _selectedMetadataItem;
-            }
-
-            set
-            {
-                if (SetProperty(ref _selectedMetadataItem, value))
-                {
-                    CmdOeffnen.RaiseCanExecuteChanged();
-                }
-            }
-        }
-
-        private bool OnCanCmdOeffnen()
-        {
-            return SelectedMetadataItem != null;
-        }
-
-        private void OnCmdOeffnen()
-        {
-            // TODO: Add your Code here
-            Process.Start(_selectedMetadataItem.FilePath);
-        }
-
-        private void OnCmdSuchen()
-        {
-            // TODO: Add your Code here
-        }
-
-        private void OnCmdReset()
-        {
-            // TODO: Add your Code here
-        }
+      CmdSuchen = new DelegateCommand(OnCmdSuchen, OnCanCmdSuchen);
+      CmdReset = new DelegateCommand(OnCmdReset);
+      CmdOeffnen = new DelegateCommand(OnCmdOeffnen, OnCanCmdOeffnen);
+      _fileSystemService = new FileSystemService();
+      _filteredMetadataItems = new ObservableCollection<IMetadataItem>();
+      ShowData();
+      
     }
+
+    public DelegateCommand CmdOeffnen { get; }
+
+    public DelegateCommand CmdSuchen { get; }
+
+    public DelegateCommand CmdReset { get; }
+
+
+    public string Suchbegriff
+    {
+      get { return _suchbegriff; }
+
+      set { if(SetProperty(ref _suchbegriff, value)) {
+          CmdSuchen.RaiseCanExecuteChanged();
+        }
+      }
+    }
+
+    public List<string> TypItems
+    {
+      get { return _typItems; }
+
+      set { SetProperty(ref _typItems, value); }
+    }
+
+    public string SelectedTypItem
+    {
+      get { return _selectedTypItem; }
+
+      set
+      {
+        if(SetProperty(ref _selectedTypItem, value))
+        {
+          CmdSuchen.RaiseCanExecuteChanged();
+        }
+      }
+    }
+
+    public ObservableCollection<IMetadataItem> FilteredMetadataItems
+    {
+      get { return _filteredMetadataItems; }
+
+      set
+      {
+        SetProperty(ref _filteredMetadataItems, value);
+
+        RaisePropertyChanged("FilteredMetadataItems");
+      }
+    }
+
+    public IMetadataItem SelectedMetadataItem
+    {
+      get { return _selectedMetadataItem; }
+
+      set
+      {
+        if (SetProperty(ref _selectedMetadataItem, value))
+        {
+          CmdOeffnen.RaiseCanExecuteChanged();
+        }
+      }
+    }
+
+    private void ShowData()
+    {
+      _fileSystemService = new FileSystemService();
+      var metadataList = _fileSystemService.GetMetadata();
+      foreach (var m in metadataList)
+      {
+        FilteredMetadataItems.Add(m);
+      }
+    }
+
+    public bool OnCanCmdOeffnen()
+    {
+      return SelectedMetadataItem != null;
+    }
+
+    private void OnCmdOeffnen()
+    {
+      System.Diagnostics.Process process = new System.Diagnostics.Process();
+      process.EnableRaisingEvents = false;
+      process.StartInfo.FileName = SelectedMetadataItem.PathInRepo;
+      process.Start();
+    }
+
+    public bool OnCanCmdSuchen()
+    {
+      return (Suchbegriff != null && SelectedTypItem != null);
+    }
+
+    public void OnCmdSuchen()
+    {
+      var tempList = new List<IMetadataItem>();
+      foreach (var m in FilteredMetadataItems)
+      {
+        if (m.Stichwoerter != null)
+        {
+          if (m.Bezeichnung.ToLower().Equals(Suchbegriff.ToLower()) ||
+              m.Stichwoerter.ToLower().Equals(Suchbegriff.ToLower()) || m.Typ.Equals(SelectedTypItem))
+          {
+            tempList.Add(m);
+          }
+        }
+        else
+        {
+          if (m.Bezeichnung.ToLower().Equals(Suchbegriff.ToLower()) ||
+               m.Typ.Equals(SelectedTypItem))
+          {
+            tempList.Add(m);
+          }
+        }
+      }
+      FilteredMetadataItems.Clear();
+      FilteredMetadataItems.AddRange(tempList);
+    }
+
+    public void OnCmdReset()
+    {
+      FilteredMetadataItems.Clear();
+      Suchbegriff = null;
+      SelectedTypItem = null;
+      ShowData();
+    }
+  }
 }

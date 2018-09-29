@@ -55,10 +55,10 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Model\MetadataItemTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Services\FileServiceTests.cs" />
-    <Compile Include="ViewModels\SearchViewModelTests.cs" />
+    <Compile Include="Services\Impl\FilenameGeneratorServiceTests.cs" />
+    <Compile Include="Services\Impl\FileSystemServiceTests.cs" />
+    <Compile Include="StubFactory\MetaDataItemFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
